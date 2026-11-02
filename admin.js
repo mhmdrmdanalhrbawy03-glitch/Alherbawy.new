@@ -44,7 +44,7 @@
       $('dashboard').classList.remove('hidden');
       $('userEmail').textContent = user.email || 'حساب Google';
       $('welcome').textContent = 'مرحبًا بك في إدارة مؤسسة الحرباوي';
-      await Promise.all([loadProducts(), loadOrders(), loadInquiries()]);
+      await Promise.all([loadProducts(), loadOrders(), loadInquiries(), loadFaqs()]);
     } catch (err) {
       say('loginMsg', 'حدث خطأ أثناء فتح لوحة التحكم: ' + (err?.message || err), 'error');
     } finally {
@@ -63,6 +63,11 @@
     const { data, error } = await sb.from('orders').select('*').order('created_at', { ascending: false }).limit(100);
     $('orderCount').textContent = error ? '!' : (data || []).length;
     $('ordersRows').innerHTML = error ? `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>` : ((data || []).map(o => `<tr><td>${escapeHtml(o.customer_name)}</td><td>${escapeHtml(o.phone)}</td><td>${escapeHtml(JSON.stringify(o.items))}</td><td><select onchange="setOrderStatus('${o.id}',this.value)">${['new','contacted','quoted','completed','cancelled'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td><td>${o.created_at ? new Date(o.created_at).toLocaleString('ar-EG') : '—'}</td></tr>`).join('') || '<tr><td colspan="5">لا توجد طلبات حتى الآن.</td></tr>');
+  }
+
+  async function loadFaqs() {
+    const {data,error}=await sb.from('faqs').select('*').order('sort_order').order('created_at',{ascending:false});
+    $('faqsRows').innerHTML=error?`<tr><td colspan=4>${escapeHtml(error.message)}</td></tr>`:(data||[]).map(f=>`<tr><td>${escapeHtml(f.question)}</td><td style="white-space:normal;min-width:220px">${escapeHtml(f.answer)}</td><td>${f.is_active?'نعم':'لا'}</td><td><button type="button" onclick="editFaq('${f.id}')">تعديل</button> <button type="button" onclick="deleteFaq('${f.id}')">حذف</button></td></tr>`).join('')||'<tr><td colspan=4>لا توجد أسئلة.</td></tr>';
   }
 
   async function loadInquiries() {
@@ -90,7 +95,26 @@
     });
 
     $('logout').addEventListener('click', async () => { await sb.auth.signOut(); window.location.reload(); });
-    $('clearForm').addEventListener('click', () => { $('productForm').reset(); $('pid').value = ''; $('pactive').checked = true; });
+    $('clearForm').addEventListener('click', () => { $('productForm').reset(); $('pid').value = ''; $('pactive').checked = true; $('imagePreview').innerHTML=''; $('imageUploadMsg').textContent='اختر صورة وسيتم رفعها تلقائيًا إلى تخزين Supabase.'; });
+
+    $('pimageFile').addEventListener('change', async () => {
+      const file=$('pimageFile').files?.[0]; if(!file)return;
+      if(!file.type.startsWith('image/')){say('imageUploadMsg','اختر ملف صورة صالحًا.','error');return;}
+      if(file.size>5*1024*1024){say('imageUploadMsg','حجم الصورة يجب ألا يتجاوز 5 ميجابايت.','error');return;}
+      say('imageUploadMsg','جارٍ رفع الصورة...');
+      const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const path=`products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const {error}=await sb.storage.from('product-images').upload(path,file,{upsert:false,contentType:file.type});
+      if(error){say('imageUploadMsg','فشل رفع الصورة: '+error.message,'error');return;}
+      const {data}=sb.storage.from('product-images').getPublicUrl(path); $('pimage').value=data.publicUrl;
+      $('imagePreview').innerHTML=`<img src="${escapeHtml(data.publicUrl)}" alt="معاينة" style="max-width:180px;max-height:130px;border-radius:12px">`;
+      say('imageUploadMsg','تم رفع الصورة بنجاح.');
+    });
+
+    $('faqForm').addEventListener('submit',async e=>{e.preventDefault();const id=$('faqId').value;const row={question:$('faqQuestion').value.trim(),answer:$('faqAnswer').value.trim(),is_active:$('faqActive').checked};const {error}=id?await sb.from('faqs').update(row).eq('id',id):await sb.from('faqs').insert(row);if(error){alert('تعذر حفظ السؤال: '+error.message);return;} $('faqForm').reset();$('faqId').value='';$('faqActive').checked=true;await loadFaqs();});
+    $('clearFaq').addEventListener('click',()=>{$('faqForm').reset();$('faqId').value='';$('faqActive').checked=true;});
+    window.editFaq=async id=>{const {data,error}=await sb.from('faqs').select('*').eq('id',id).single();if(error)return alert(error.message);$('faqId').value=data.id;$('faqQuestion').value=data.question;$('faqAnswer').value=data.answer;$('faqActive').checked=data.is_active;window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});};
+    window.deleteFaq=async id=>{if(!confirm('حذف السؤال؟'))return;const {error}=await sb.from('faqs').delete().eq('id',id);if(error)alert(error.message);else loadFaqs();};
 
     $('productForm').addEventListener('submit', async (event) => {
       event.preventDefault();

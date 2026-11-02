@@ -167,12 +167,13 @@ function calc(){
 }
 </script>
 <a class="floating-wa" href="https://wa.me/201007978423" aria-label="واتساب">💬</a>
-<a href="admin.html" aria-label="دخول الإدارة" style="position:fixed;left:18px;bottom:20px;z-index:999;background:#e5b92e;color:#111;padding:12px 17px;border:2px solid #111;border-radius:999px;font-weight:900;box-shadow:0 5px 18px #0003">🔐 دخول الإدارة</a>
-<div id="siteToast" class="toast"></div>
+
+<div id="siteToast" class="toast"></div><section id="faqSection" style="max-width:1100px;margin:50px auto;padding:20px"><div class="section-kicker">معلومات تهمك</div><h2 style="font-size:32px">الأسئلة الشائعة</h2><div id="faqList" class="faq-list"><p>جاري تحميل الأسئلة...</p></div></section><div class="admin-entry-bottom"><a href="admin.html">🔐 دخول الإدارة</a></div>
 <script>
 const toast=(m)=>{const e=document.getElementById('siteToast');if(!e)return;e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)};
 const obs=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('show')),{threshold:.08});
 document.querySelectorAll('section').forEach(e=>{e.classList.add('reveal');obs.observe(e)});
+(async()=>{if(!window.sb)return;const {data,error}=await sb.from('faqs').select('question,answer').eq('is_active',true).order('sort_order');const box=document.getElementById('faqList');if(!box)return;box.innerHTML=error?'<p>تعذر تحميل الأسئلة حاليًا.</p>':(data||[]).map(f=>`<details class=\"faq-item\"><summary>${f.question.replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}</summary><p>${f.answer.replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}</p></details>`).join('')||'<p>سيتم إضافة الأسئلة الشائعة قريبًا.</p>';})();
 </script>
 </body>
 </html>
