@@ -18,7 +18,7 @@
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#111;color:#fff;padding:12px 18px;border-radius:999px;z-index:100;transition:.25s;font-size:13px;font-weight:800}.toast.show{opacity:1;transform:translateX(-50%)}
 .floating-wa{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#25D366;color:#fff;font-size:24px;box-shadow:0 10px 30px #0003}
 </style>
-</head>
+<link rel="stylesheet" href="style.css"><script defer src="app.js"></script></head>
 <body class="bg-[#fbfaf8]">
 
 <!-- NAV -->
@@ -93,6 +93,11 @@
 </div>
 </section>
 
+<!-- عروض وتجربة سريعة -->
+<section id="offers" class="max-w-[1600px] mx-auto px-6 py-12">
+ <div class="page-hero"><span class="section-kicker">خدمات مؤسسة الحرباوي</span><h2 class="text-4xl md:text-5xl font-black mt-5">اختيارك الصح يبدأ <span style="color:#f4c542">من هنا</span></h2><p class="text-gray-300 mt-4 max-w-2xl leading-8">اطلب تسعيرة، اسأل عن توافر منتج، أو جهّز قائمة احتياجات مشروعك. بنساعدك تختار المنتج المناسب حسب طبيعة الاستخدام والميزانية.</p><div class="flex flex-wrap gap-3 mt-7"><a href="products.html" class="primary-btn">تصفح الكتالوج ←</a><a href="https://wa.me/201007978423?text=%D8%A7%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D8%A7%D9%84%D8%B9%D8%B1%D9%88%D8%B6" class="dark-btn" style="border:1px solid #777">استفسر عن العروض</a></div></div>
+</section>
+
 <!-- PRODUCTS بطريقة مميزة -->
 <section id="products" class="max-w-[1600px] mx-auto px-6 py-20">
 <h2 class="text-4xl font-black">البضاعة اللي بنحط اسمنا عليها</h2>
@@ -154,10 +159,11 @@
 
 <script>
 function calc(){
-let m=document.getElementById('m').value;
-if(!m) return;
-let b=Math.ceil(m/35);
-document.getElementById('res').innerText=`شقة ${m} متر تحتاج حوالي ${b} بستلة 7070 + ${Math.ceil(b/2)} شكارة معجون. ابعتلي واتساب أأكدلك الكمية بالظبط ببلاش.`;
+ const raw=Number(document.getElementById('m').value);
+ const out=document.getElementById('res');
+ if(!Number.isFinite(raw)||raw<20||raw>1000){out.textContent='من فضلك أدخل مساحة صحيحة بين 20 و1000 متر.';return;}
+ const low=Math.round(raw*2.5), high=Math.round(raw*3.5);
+ out.innerHTML=`تقدير مبدئي لمساحة الأسطح القابلة للدهان: من <b>${low}</b> إلى <b>${high}</b> متر مربع تقريبًا. الكمية الفعلية تعتمد على ارتفاع الحوائط وعدد الأوجه وحالة السطح ونوع المنتج. <a style="color:#fff;text-decoration:underline" href="https://wa.me/201007978423?text=${encodeURIComponent('أريد مساعدة في حساب دهانات شقة مساحتها '+raw+' متر مربع')}">اطلب حسابًا أدق على واتساب</a>`;
 }
 </script>
 <a class="floating-wa" href="https://wa.me/201007978423" aria-label="واتساب">💬</a>
