@@ -27,3 +27,16 @@ drop policy if exists "Admins update product images" on storage.objects;
 create policy "Admins update product images" on storage.objects for update to authenticated using (bucket_id = 'product-images' and public.is_admin()) with check (bucket_id = 'product-images' and public.is_admin());
 drop policy if exists "Admins delete product images" on storage.objects;
 create policy "Admins delete product images" on storage.objects for delete to authenticated using (bucket_id = 'product-images' and public.is_admin());
+
+
+-- أسئلة افتراضية تظهر تلقائيًا إذا كان الجدول فارغًا
+insert into public.faqs(question,answer,sort_order)
+select v.question,v.answer,v.sort_order
+from (values
+ ('كيف أطلب عرض سعر؟','تصفح المنتجات وأضف احتياجاتك إلى سلة الطلب، أو استخدم نموذج تواصل معنا لتسجيل طلب التسعير داخل الموقع.',1),
+ ('هل الأسعار المعروضة نهائية؟','يتم تأكيد السعر والتوافر من فريق المؤسسة حسب النوع والمقاس والكمية قبل اعتماد الطلب.',2),
+ ('هل يمكن توريد كميات للمشروعات؟','نعم، أرسل تفاصيل المشروع والكميات المطلوبة من نموذج التواصل وسيتم متابعة طلبك.',3),
+ ('أين تقع مؤسسة الحرباوي؟','قرية 1 بنجر — الشارع الرئيسي — بجوار مسجد القرية.',4),
+ ('ما مواعيد العمل؟','من 8 صباحًا إلى 10 مساءً، ويوم الجمعة بعد الصلاة.',5)
+) as v(question,answer,sort_order)
+where not exists (select 1 from public.faqs);
