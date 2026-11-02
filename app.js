@@ -1,0 +1,4 @@
+const WA='201007978423';
+function toast(msg){let t=document.querySelector('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.append(t)}t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2200)}
+function shell(){if(!document.querySelector('.site-float')){let f=document.createElement('div');f.className='site-float';f.innerHTML=`<a class="wa" href="https://wa.me/${WA}" aria-label="واتساب">◉</a><a class="call" href="tel:01007978423" aria-label="اتصال">☎</a>`;document.body.append(f)};let o=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');o.unobserve(e.target)}}),{threshold:.08});document.querySelectorAll('section, .premium-card, .product-card, .gallery-tile').forEach(x=>{x.classList.add('reveal');o.observe(x)})}
+document.addEventListener('DOMContentLoaded',shell);
