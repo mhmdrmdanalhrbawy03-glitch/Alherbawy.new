@@ -1,0 +1,12 @@
+إعداد تسجيل الدخول بالبريد وGoogle — مؤسسة الحرباوي
+
+1) في Supabase افتح Authentication > URL Configuration.
+2) ضع رابط موقعك المنشور في Site URL، وأضف رابط الموقع مع /admin.html إلى Redirect URLs.
+3) افتح Authentication > Sign In / Providers > Google وفعّل المزود.
+4) أنشئ OAuth Client من Google Cloud Console (Web application)، وأدخل Authorized redirect URI الذي يعرضه Supabase في صفحة مزود Google. ضع Client ID وClient Secret في إعدادات Google Provider داخل Supabase.
+5) أنشئ المستخدم من Authentication > Users أو سجّل الدخول أول مرة عبر Google.
+6) انسخ UUID للحساب ونفّذ في SQL Editor بعد استبداله: \n
+insert into public.profiles (id, role) values ('UUID-ضعه-هنا', 'admin')
+on conflict (id) do update set role = 'admin';
+
+مهم: دخول Google لا يمنح صلاحية الإدارة تلقائيًا. يجب إضافة UUID إلى profiles بدور admin. لا تضع Google Client Secret أو service_role في ملفات الموقع.
