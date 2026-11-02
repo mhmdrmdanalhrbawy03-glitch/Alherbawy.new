@@ -1,10 +1,12 @@
--- هذا الملف لا يفعّل Google OAuth؛ تفعيل المزود يتم من لوحة Supabase وGoogle Cloud.
--- بعد نجاح تسجيل الدخول بحساب Google مرة واحدة:
--- 1) افتح Supabase > Authentication > Users وانسخ UUID للحساب.
--- 2) استبدل UUID_GOES_HERE بالـ UUID الحقيقي ثم نفّذ الاستعلام:
+-- منح صلاحية المدير لحساب Google بعد تسجيل الدخول به مرة واحدة.
+-- استخدم البريد الإلكتروني الدقيق للحساب الذي تريد منحه صلاحية الإدارة.
+-- هذا الاستعلام لا يفعّل Google OAuth؛ يجب تفعيل Google Provider من Supabase Dashboard.
 
 INSERT INTO public.profiles (id, role)
-VALUES ('UUID_GOES_HERE'::uuid, 'admin')
-ON CONFLICT (id) DO UPDATE SET role = 'admin';
+SELECT u.id, 'admin'
+FROM auth.users AS u
+WHERE lower(u.email) = lower('mhmdrmdanalhrbawy03@gmail.com')
+ON CONFLICT (id)
+DO UPDATE SET role = EXCLUDED.role;
 
--- لا تضع Client Secret أو service_role key داخل ملفات الموقع أو SQL.
+-- إذا لم يتأثر أي صف، فتأكد أن الحساب سجّل الدخول مرة واحدة وأن البريد صحيح.
