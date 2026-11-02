@@ -12,22 +12,10 @@ alter table public.orders add column if not exists updated_at timestamptz not nu
 alter table public.orders add column if not exists admin_note text default '';
 alter table public.orders add column if not exists payment_status text not null default 'pending_review';
 
--- استبدال قيد الحالة القديم بقيم المتجر الجديدة
-DO $block$
-DECLARE
-  constraint_row record;
-BEGIN
-  FOR constraint_row IN
-    SELECT conname
-    FROM pg_constraint
-    WHERE conrelid = 'public.orders'::regclass
-      AND contype = 'c'
-      AND pg_get_constraintdef(oid) ILIKE '%status%'
-  LOOP
-    EXECUTE format('ALTER TABLE public.orders DROP CONSTRAINT %I', constraint_row.conname);
-  END LOOP;
-END
-$block$;
+-- تحديث قيد الحالة القديم (الاسم الناتج من schema الأساسي هو orders_status_check)
+alter table public.orders drop constraint if exists orders_status_check;
+alter table public.orders add constraint orders_status_check
+ check (status in ('new','contacted','quoted','completed','cancelled','pending_review','processing','shipped','delivered','rejected'));
 alter table public.orders alter column status set default 'pending_review';
 
 create table if not exists public.payment_methods (
@@ -67,8 +55,6 @@ create policy "admin manage payment receipts" on storage.objects for all to auth
 
 -- لا يقبل النظام طلب متجر جديد بدون وسيلة دفع وإثبات تحويل، ويبدأ دائمًا قيد المراجعة.
 alter table public.orders drop constraint if exists orders_checkout_required;
-alter table public.orders add constraint orders_checkout_required
- check (payment_method_id is not null) not valid;
 drop policy if exists "customers create own orders" on public.orders;
 create policy "customers create own orders" on public.orders for insert to authenticated
 with check (

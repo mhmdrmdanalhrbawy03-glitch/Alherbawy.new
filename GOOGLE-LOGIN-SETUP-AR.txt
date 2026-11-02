@@ -1,12 +1,31 @@
-إعداد تسجيل الدخول بالبريد وGoogle — مؤسسة الحرباوي
+إعداد تسجيل الدخول بحساب Google — مؤسسة الحرباوي
 
-1) في Supabase افتح Authentication > URL Configuration.
-2) ضع رابط موقعك المنشور في Site URL، وأضف رابط الموقع مع /admin.html إلى Redirect URLs.
-3) افتح Authentication > Sign In / Providers > Google وفعّل المزود.
-4) أنشئ OAuth Client من Google Cloud Console (Web application)، وأدخل Authorized redirect URI الذي يعرضه Supabase في صفحة مزود Google. ضع Client ID وClient Secret في إعدادات Google Provider داخل Supabase.
-5) أنشئ المستخدم من Authentication > Users أو سجّل الدخول أول مرة عبر Google.
-6) انسخ UUID للحساب ونفّذ في SQL Editor بعد استبداله: \n
-insert into public.profiles (id, role) values ('UUID-ضعه-هنا', 'admin')
-on conflict (id) do update set role = 'admin';
+مهم: لا يوجد استعلام SQL يستطيع تفعيل Google OAuth. يجب إعداد المزود من Supabase وGoogle Cloud.
 
-مهم: دخول Google لا يمنح صلاحية الإدارة تلقائيًا. يجب إضافة UUID إلى profiles بدور admin. لا تضع Google Client Secret أو service_role في ملفات الموقع.
+أولاً — إعداد Google Cloud:
+1) افتح Google Cloud Console وأنشئ OAuth Client ID من النوع Web application.
+2) في Authorized redirect URIs أضف رابط Callback الذي يظهر حرفيًا داخل إعدادات Google Provider في Supabase. غالبًا يكون بالشكل:
+   https://vpifivtsydbkhreszkuk.supabase.co/auth/v1/callback
+3) احفظ Client ID وClient Secret.
+
+ثانيًا — إعداد Supabase:
+1) Authentication > Sign In / Providers > Google.
+2) فعّل Google وأدخل Client ID وClient Secret ثم Save.
+3) Authentication > URL Configuration:
+   - Site URL: https://alherbawynew.vercel.app
+   - Redirect URLs أضف:
+     https://alherbawynew.vercel.app/admin.html
+     https://alherbawynew.vercel.app/**
+4) تأكد من حفظ الإعدادات، ثم جرّب تسجيل الدخول من /admin.html.
+
+ثالثًا — منح صلاحية المدير:
+1) سجّل الدخول بحساب Google مرة واحدة.
+2) Authentication > Users وانسخ UUID للحساب.
+3) افتح ملف google-admin-role.sql واستبدل UUID_GOES_HERE بالـ UUID الحقيقي ثم نفّذه في SQL Editor.
+
+ملاحظات استكشاف الأخطاء:
+- redirect_uri_mismatch: عنوان Callback في Google Cloud لا يطابق العنوان المعروض في Supabase حرفيًا.
+- Invalid login credentials / access_denied: راجع حالة المستخدم ومزود Google وإعدادات OAuth consent screen.
+- لم يتمكن من الرجوع للموقع: أضف /admin.html إلى Redirect URLs في Supabase.
+- نجاح Google لا يمنح صلاحية الإدارة تلقائيًا؛ نفّذ خطوة UUID أعلاه.
+- لا ترسل Client Secret أو service_role key لأي شخص ولا تضعهما في ملفات الواجهة.
