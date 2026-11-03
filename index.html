@@ -50,6 +50,15 @@ body{background:var(--lux-cream)!important;color:#191919;font-family:'Cairo',san
 .home-hero-btn:hover{transform:translateY(-3px)}
 .home-hero-btn.gold{background:linear-gradient(135deg,#f8df91,#d6a936);color:#17130a;box-shadow:0 5px 0 #8b671e,0 12px 24px #0004}
 .home-hero-btn.light{background:#fff;color:#171717;border:1px solid #e6d8b5;box-shadow:0 5px 0 #c9c1ae,0 12px 24px #0003}
+.home-hero-management{display:inline-flex;align-items:center;gap:9px;margin-top:18px;padding:10px 15px;border:1px solid #a98432;border-right:4px solid #f1cf72;border-radius:12px;background:linear-gradient(110deg,#ffffff0a,#d7ad4217);color:#f8e5ae;font-size:14px;font-weight:900;box-shadow:0 8px 22px #0002}
+.home-hero-management strong{color:#fff;font-size:15px}
+.home-hero-btn.quote{position:relative;gap:10px;min-width:210px;min-height:60px;padding:15px 28px;border:1px solid #ffe7a0;background:linear-gradient(135deg,#fff0b5 0%,#e8bd50 45%,#b7831d 100%);color:#17120a;box-shadow:0 6px 0 #805b16,0 15px 30px #d7ad4238,inset 0 1px #fff9;font-size:16px}
+.home-hero-btn.quote:after{content:'←';font-size:20px;transition:transform .2s}
+.home-hero-btn.quote:hover{box-shadow:0 8px 0 #805b16,0 19px 34px #d7ad4255,inset 0 1px #fff9}
+.home-hero-btn.quote:hover:after{transform:translateX(-4px)}
+.site-nav .quote-nav-btn{background:linear-gradient(135deg,#f8df91,#d6a936)!important;color:#17130a!important;border:1px solid #b68b2b!important;border-radius:13px;padding:13px 20px!important;font-weight:1000!important;box-shadow:0 4px 0 #8b671e,0 9px 20px #0002!important}
+@media(max-width:640px){.home-hero-management{font-size:12px;margin-top:14px}.home-hero-btn.quote{width:100%;min-width:0;min-height:56px;font-size:15px}.home-hero-actions{width:100%}.site-nav .quote-nav-btn{padding:10px 13px!important}}
+
 /* reduce harsh black band and improve content spacing */
 .notice-bar{margin-top:16px!important}
 @media(max-width:900px){.site-nav-inner{flex-wrap:wrap;justify-content:center;gap:8px}.brand-link{min-width:0;margin-inline:auto}.site-nav .nav-link{padding:9px 10px;font-size:13px}.home-hero-inner{grid-template-columns:minmax(190px,.75fr) minmax(0,1.25fr);gap:25px;padding:34px!important}.home-logo-frame{max-width:280px}}
@@ -64,7 +73,7 @@ body{background:var(--lux-cream)!important;color:#191919;font-family:'Cairo',san
 <div class="font-black leading-none">الحرباوي<br/><span class="text-[10px] text-yellow-500 tracking-widest">مش بنبيع.. بنعمر</span></div>
 </a>
 <div class="hidden lg:flex gap-4 text-[12px] font-black items-center"><a class="nav-link" href="#story">قصتنا</a><a class="nav-link" href="products.html">المنتجات</a><a class="nav-link" href="gallery.html">المعرض</a><a class="nav-link" href="#hisab">احسبها</a><a class="nav-link" href="my-orders.html">طلباتي</a><a class="nav-link" href="contact.html">تواصل معنا</a></div>
-<a class="bg-black text-white px-5 py-2 rounded-full text-xs font-black nav-link" href="contact.html">اطلب عرض سعر</a>
+<a class="bg-black text-white px-5 py-2 rounded-full text-xs font-black nav-link quote-nav-btn" href="contact.html?kind=quote">اطلب عرض سعر</a>
 <div class="header-tools"><a aria-label="دخول الإدارة" class="admin-shield" href="admin.html" title="دخول الإدارة"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 2 20 5v6c0 5.2-3.4 9.3-8 11-4.6-1.7-8-5.8-8-11V5l8-3Zm0 3.1L7 7v4c0 3.5 2 6.5 5 7.9 3-1.4 5-4.4 5-7.9V7l-5-1.9Zm-1 9.4-2.1-2.1-1.4 1.4L11 17l5-5-1.4-1.4-3.6 3.9Z"></path></svg></a></div></div>
 </nav>
 <!-- HERO -->
@@ -78,9 +87,10 @@ body{background:var(--lux-cream)!important;color:#191919;font-family:'Cairo',san
 <div class="home-hero-badge">مؤسسة الحرباوي</div>
 <h1 class="home-hero-title">مش مجرد محل.. إحنا شريك تشطيبك</h1>
 <p class="home-hero-description">دهانات، حدايد، بويات ومستلزمات التشطيب — بجودة وخدمة تليق بثقتك.</p>
+<div class="home-hero-management"><span aria-hidden="true">✦</span> بإدارة <strong>أ/ رمضان الحرباوي</strong></div>
 <div class="home-hero-actions">
-<a class="home-hero-btn gold" href="products.html">شاهد المنتجات</a>
-<a class="home-hero-btn light" href="contact.html">تواصل معنا</a>
+<a class="home-hero-btn gold quote" href="contact.html?kind=quote">اطلب عرض سعر الآن</a>
+<a class="home-hero-btn light" href="products.html">تصفح المنتجات</a>
 </div>
 </div>
 </div>
