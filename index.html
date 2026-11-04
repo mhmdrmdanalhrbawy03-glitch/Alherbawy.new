@@ -62,7 +62,33 @@ body{background:var(--lux-cream)!important;color:#191919;font-family:'Cairo',san
 .notice-bar{margin-top:16px!important}
 @media(max-width:900px){.site-nav-inner{flex-wrap:wrap;justify-content:center;gap:8px}.brand-link{min-width:0;margin-inline:auto}.site-nav .nav-link{padding:9px 10px;font-size:13px}.home-hero-inner{grid-template-columns:minmax(190px,.75fr) minmax(0,1.25fr);gap:25px;padding:34px!important}.home-logo-frame{max-width:280px}}
 @media(max-width:640px){.site-nav{position:relative!important}.site-nav-inner{padding:10px 12px}.brand-link{width:100%;justify-content:center}.site-nav-inner>div{display:flex;flex-wrap:wrap;justify-content:center;gap:3px}.site-nav .nav-link{font-size:12px;padding:8px 9px}.home-hero-section{padding:12px 10px 0!important}.home-hero-card{min-height:0;border-radius:22px}.home-hero-inner{display:flex!important;flex-direction:column!important;gap:22px;padding:28px 20px 34px!important;text-align:center!important}.home-logo-frame{width:min(66vw,245px);padding:10px;border-radius:22px;order:0}.home-hero-copy{width:100%;text-align:center}.home-hero-title{font-size:clamp(31px,9vw,43px)!important;letter-spacing:-.7px;margin-top:14px!important}.home-hero-title:after{margin:15px auto 0}.home-hero-description{font-size:14px!important;line-height:1.9!important}.home-hero-actions{justify-content:center!important;margin-top:22px!important}.home-hero-btn{min-width:135px;min-height:48px;padding:11px 17px;font-size:13px}.notice-bar{margin-top:12px!important}}
-</style></head>
+</style>
+<style id="contact-dock-position-fix">
+/* تثبيت أيقونتي التواصل في يسار الشاشة مثل الشكل القديم */
+html body .contact-dock{
+  position:fixed !important;
+  left:18px !important; right:auto !important;
+  top:auto !important; bottom:18px !important;
+  transform:none !important;
+  display:flex !important; flex-direction:column !important;
+  align-items:center !important; justify-content:flex-end !important;
+  width:52px !important; height:auto !important;
+  margin:0 !important; padding:0 !important; gap:9px !important;
+  z-index:99999 !important;
+}
+html body .contact-dock > a.dock-whatsapp,
+html body .contact-dock > a.dock-phone{
+  position:relative !important; flex:0 0 52px !important;
+  width:52px !important; height:52px !important;
+  min-width:52px !important; min-height:52px !important;
+}
+@media(max-width:600px){
+  html body .contact-dock{left:12px !important;right:auto !important;bottom:14px !important;gap:8px !important;width:46px !important}
+  html body .contact-dock > a.dock-whatsapp,
+  html body .contact-dock > a.dock-phone{flex-basis:46px !important;width:46px !important;height:46px !important;min-width:46px !important;min-height:46px !important}
+}
+</style>
+</head>
 <body class="bg-[#fbfaf8]">
 <!-- NAV -->
 <nav class="site-nav fixed top-0 w-full z-50">
