@@ -66,14 +66,20 @@ create policy "customer read own payment receipt" on storage.objects for select 
 drop policy if exists "admin manage payment receipts" on storage.objects;
 create policy "admin manage payment receipts" on storage.objects for all to authenticated using(bucket_id='payment-receipts' and public.is_admin()) with check(bucket_id='payment-receipts' and public.is_admin());
 
--- إنشاء profile تلقائيًا للمستخدمين الجدد حتى لا يتعطل إنشاء الطلب بعد التسجيل.
+-- إنشاء profile تلقائيًا للمستخدمين الجدد دون استخدام علامات dollar-quoting.
 create or replace function public.handle_new_user_profile()
-returns trigger language plpgsql security definer set search_path=public as $$
-begin
- insert into public.profiles(id,role) values(new.id,'customer') on conflict(id) do nothing;
- return new;
-end;
-$$;
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as 'BEGIN
+  INSERT INTO public.profiles(id, role)
+  VALUES (NEW.id, ''customer'')
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;';
+
 drop trigger if exists on_auth_user_created_profile on auth.users;
-create trigger on_auth_user_created_profile after insert on auth.users
+create trigger on_auth_user_created_profile
+after insert on auth.users
 for each row execute function public.handle_new_user_profile();

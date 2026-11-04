@@ -44,7 +44,7 @@
       $('dashboard').classList.remove('hidden');
       $('userEmail').textContent = user.email || 'حساب Google';
       $('welcome').textContent = 'مرحبًا بك في إدارة مؤسسة الحرباوي';
-      await Promise.all([loadProducts(), loadOrders(), loadInquiries(), loadFaqs(), loadPaymentMethods()]);
+      await Promise.all([loadProducts(), loadOrders(), loadInquiries(), loadFaqs(), loadPaymentMethods(), loadCustomers()]);
     } catch (err) {
       say('loginMsg', 'حدث خطأ أثناء فتح لوحة التحكم: ' + (err?.message || err), 'error');
     } finally {
@@ -71,6 +71,22 @@
       html.push(`<tr><td>${escapeHtml(o.customer_name)}<br><small>${escapeHtml(o.phone)}</small></td><td>${escapeHtml(o.tracking_code||'—')}<br>${items}<br><b>${Number(o.total_amount||0).toLocaleString('ar-EG')} ج.م</b><br>${escapeHtml(o.payment_method_name||'')}</td><td>${receipt}</td><td><select onchange="setOrderStatus('${o.id}',this.value)">${Object.entries(labels).filter(([k])=>k!=='payment_rejected').map(([k,v])=>`<option value="${k}" ${o.status===k?'selected':''}>${v}</option>`).join('')}</select><select style="margin-top:5px" onchange="setPaymentStatus('${o.id}',this.value)"><option value="pending_review" ${o.payment_status==='pending_review'?'selected':''}>الدفع قيد المراجعة</option><option value="payment_confirmed" ${o.payment_status==='payment_confirmed'?'selected':''}>تم تأكيد الدفع</option><option value="payment_rejected" ${o.payment_status==='payment_rejected'?'selected':''}>رفض الإثبات</option></select><input class="field" style="min-width:160px;margin-top:5px" placeholder="ملاحظة للعميل" value="${escapeHtml(o.admin_note||'')}" onchange="saveOrderNote('${o.id}',this.value)"></td><td>${o.created_at?new Date(o.created_at).toLocaleString('ar-EG'):'—'}</td></tr>`);
     }
     $('ordersRows').innerHTML=html.join('')||'<tr><td colspan="7">لا توجد طلبات حتى الآن.</td></tr>';
+  }
+
+
+  async function loadCustomers() {
+    const body = $('customersRows'); if (!body) return;
+    body.innerHTML = '<tr><td colspan="5">جارٍ تحميل العملاء…</td></tr>';
+    const [{ data: profiles, error: profileError }, { data: orders, error: orderError }] = await Promise.all([
+      sb.from('profiles').select('id,email,full_name,phone,role,created_at').eq('role','customer').order('created_at',{ascending:false}),
+      sb.from('orders').select('id,user_id,tracking_code,customer_name,total_amount,status,created_at').not('user_id','is',null).order('created_at',{ascending:false}).limit(1000)
+    ]);
+    if (profileError) { body.innerHTML = `<tr><td colspan="5">${escapeHtml(profileError.message)}</td></tr>`; say('customersMsg','تعذر تحميل بيانات العملاء. شغّل ملف SQL المرفق أولًا.','error'); return; }
+    if (orderError) { body.innerHTML = `<tr><td colspan="5">${escapeHtml(orderError.message)}</td></tr>`; return; }
+    const grouped = new Map(); for (const o of (orders||[])) { if(!grouped.has(o.user_id)) grouped.set(o.user_id,[]); grouped.get(o.user_id).push(o); }
+    $('customerCount').textContent=(profiles||[]).length;
+    body.innerHTML=(profiles||[]).map(c=>{const list=grouped.get(c.id)||[];const orderHtml=list.length?list.map(o=>`<div style="padding:6px 0;border-bottom:1px solid #eee"><b>${escapeHtml(o.tracking_code||o.id)}</b> — ${Number(o.total_amount||0).toLocaleString('ar-EG')} ج.م<br><small>${escapeHtml(o.status||'—')} · ${o.created_at?new Date(o.created_at).toLocaleDateString('ar-EG'):'—'}</small></div>`).join(''):'لا توجد طلبات';return `<tr><td><b>${escapeHtml(c.full_name||'عميل بدون اسم')}</b><br><small>${escapeHtml(c.id)}</small></td><td>${escapeHtml(c.phone||'—')}<br>${escapeHtml(c.email||'—')}</td><td>${c.created_at?new Date(c.created_at).toLocaleDateString('ar-EG'):'—'}</td><td>${list.length}</td><td style="white-space:normal;min-width:220px">${orderHtml}</td></tr>`}).join('')||'<tr><td colspan="5">لا يوجد عملاء مسجلون حتى الآن.</td></tr>';
+    say('customersMsg','تم تحميل بيانات العملاء وطلبات كل حساب.','info');
   }
 
   async function loadPaymentMethods(){const {data,error}=await sb.from('payment_methods').select('*').order('sort_order');$('paymentMethodsRows').innerHTML=error?`<tr><td colspan="4">${escapeHtml(error.message)}</td></tr>`:(data||[]).map(m=>`<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.account_number)}<br>${escapeHtml(m.account_name||'')}</td><td>${m.is_active?'نعم':'لا'}</td><td><button type="button" onclick="editPaymentMethod('${m.id}')">تعديل</button> <button type="button" onclick="deletePaymentMethod('${m.id}')">حذف</button></td></tr>`).join('')||'<tr><td colspan="4">لم تضف وسائل دفع بعد.</td></tr>';}
@@ -105,7 +121,9 @@
     });
 
     $('logout').addEventListener('click', async () => { await sb.auth.signOut(); window.location.reload(); });
+    $('refreshCustomers')?.addEventListener('click', loadCustomers);
     $('clearForm').addEventListener('click', () => { $('productForm').reset(); $('pid').value = ''; $('pactive').checked = true; $('imagePreview').innerHTML=''; $('imageUploadMsg').textContent='اختر صورة وسيتم رفعها تلقائيًا إلى تخزين Supabase.'; });
+    $('addProductNew').addEventListener('click', () => { $('productForm').reset(); $('pid').value=''; $('pactive').checked=true; $('imagePreview').innerHTML=''; $('imageUploadMsg').textContent='اختر صورة وسيتم رفعها تلقائيًا إلى تخزين Supabase.'; $('productForm').scrollIntoView({behavior:'smooth',block:'center'}); $('pname').focus({preventScroll:true}); });
 
     $('pimageFile').addEventListener('change', async () => {
       const file=$('pimageFile').files?.[0]; if(!file)return;
