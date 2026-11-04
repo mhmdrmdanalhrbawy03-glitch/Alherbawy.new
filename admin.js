@@ -44,7 +44,7 @@
       $('dashboard').classList.remove('hidden');
       $('userEmail').textContent = user.email || 'حساب Google';
       $('welcome').textContent = 'مرحبًا بك في إدارة مؤسسة الحرباوي';
-      await Promise.all([loadProducts(), loadOrders(), loadInquiries(), loadFaqs(), loadPaymentMethods(), loadCustomers()]);
+      await Promise.all([loadProducts(), loadOrders(), loadInquiries(), loadFaqs(), loadPaymentMethods(), loadCustomers(), loadCustomerActivity()]);
     } catch (err) {
       say('loginMsg', 'حدث خطأ أثناء فتح لوحة التحكم: ' + (err?.message || err), 'error');
     } finally {
@@ -76,18 +76,38 @@
 
   async function loadCustomers() {
     const body = $('customersRows'); if (!body) return;
-    body.innerHTML = '<tr><td colspan="5">جارٍ تحميل العملاء…</td></tr>';
+    body.innerHTML = '<tr><td colspan="6">جارٍ تحميل العملاء…</td></tr>';
     const [{ data: profiles, error: profileError }, { data: orders, error: orderError }] = await Promise.all([
-      sb.from('profiles').select('id,email,full_name,phone,role,created_at').eq('role','customer').order('created_at',{ascending:false}),
+      sb.from('profiles').select('id,email,full_name,phone,role,created_at,account_status,is_verified,warning_message,last_seen_at').eq('role','customer').order('created_at',{ascending:false}),
       sb.from('orders').select('id,user_id,tracking_code,customer_name,total_amount,status,created_at').not('user_id','is',null).order('created_at',{ascending:false}).limit(1000)
     ]);
-    if (profileError) { body.innerHTML = `<tr><td colspan="5">${escapeHtml(profileError.message)}</td></tr>`; say('customersMsg','تعذر تحميل بيانات العملاء. شغّل ملف SQL المرفق أولًا.','error'); return; }
-    if (orderError) { body.innerHTML = `<tr><td colspan="5">${escapeHtml(orderError.message)}</td></tr>`; return; }
+    if (profileError) { body.innerHTML = `<tr><td colspan="6">${escapeHtml(profileError.message)}</td></tr>`; say('customersMsg','تعذر تحميل بيانات العملاء. شغّل ملف SQL الخاص بإدارة الحسابات أولًا.','error'); return; }
+    if (orderError) { body.innerHTML = `<tr><td colspan="6">${escapeHtml(orderError.message)}</td></tr>`; return; }
     const grouped = new Map(); for (const o of (orders||[])) { if(!grouped.has(o.user_id)) grouped.set(o.user_id,[]); grouped.get(o.user_id).push(o); }
     $('customerCount').textContent=(profiles||[]).length;
-    body.innerHTML=(profiles||[]).map(c=>{const list=grouped.get(c.id)||[];const orderHtml=list.length?list.map(o=>`<div style="padding:6px 0;border-bottom:1px solid #eee"><b>${escapeHtml(o.tracking_code||o.id)}</b> — ${Number(o.total_amount||0).toLocaleString('ar-EG')} ج.م<br><small>${escapeHtml(o.status||'—')} · ${o.created_at?new Date(o.created_at).toLocaleDateString('ar-EG'):'—'}</small></div>`).join(''):'لا توجد طلبات';return `<tr><td><b>${escapeHtml(c.full_name||'عميل بدون اسم')}</b><br><small>${escapeHtml(c.id)}</small></td><td>${escapeHtml(c.phone||'—')}<br>${escapeHtml(c.email||'—')}</td><td>${c.created_at?new Date(c.created_at).toLocaleDateString('ar-EG'):'—'}</td><td>${list.length}</td><td style="white-space:normal;min-width:220px">${orderHtml}</td></tr>`}).join('')||'<tr><td colspan="5">لا يوجد عملاء مسجلون حتى الآن.</td></tr>';
-    say('customersMsg','تم تحميل بيانات العملاء وطلبات كل حساب.','info');
+    body.innerHTML=(profiles||[]).map(c=>{
+      const list=grouped.get(c.id)||[], verified=c.is_verified?' <span title="حساب موثّق" style="color:#1687d9;font-weight:900">✔ موثّق</span>':'';
+      const status=c.account_status||'active', statusLabel={active:'نشط',warned:'محذّر',suspended:'موقوف مؤقتًا',banned:'محظور'}[status]||status;
+      const orderHtml=list.length?list.map(o=>`<div style="padding:6px 0;border-bottom:1px solid #eee"><b>${escapeHtml(o.tracking_code||o.id)}</b> — ${Number(o.total_amount||0).toLocaleString('ar-EG')} ج.م<br><small>${escapeHtml(o.status||'—')} · ${o.created_at?new Date(o.created_at).toLocaleDateString('ar-EG'):'—'}</small></div>`).join(''):'لا توجد طلبات';
+      return `<tr><td><b>${escapeHtml(c.full_name||'عميل بدون اسم')}</b>${verified}<br><small>${escapeHtml(c.id)}</small></td><td>${escapeHtml(c.phone||'—')}<br>${escapeHtml(c.email||'—')}</td><td>${c.created_at?new Date(c.created_at).toLocaleDateString('ar-EG'):'—'}<br><small>آخر ظهور: ${c.last_seen_at?new Date(c.last_seen_at).toLocaleString('ar-EG'):'غير متاح'}</small></td><td>${list.length}</td><td style="white-space:normal;min-width:220px">${orderHtml}</td><td style="white-space:normal;min-width:230px"><b>${statusLabel}</b>${c.warning_message?`<br><small>التحذير: ${escapeHtml(c.warning_message)}</small>`:''}<br><button type="button" onclick="toggleCustomerVerified('${c.id}',${!c.is_verified})">${c.is_verified?'إلغاء التوثيق':'توثيق ✔'}</button> <button type="button" onclick="warnCustomer('${c.id}')">تحذير</button><br><button type="button" onclick="setCustomerStatus('${c.id}','${status==='suspended'?'active':'suspended'}')">${status==='suspended'?'إعادة تفعيل':'إيقاف مؤقت'}</button> <button type="button" onclick="setCustomerStatus('${c.id}','${status==='banned'?'active':'banned'}')">${status==='banned'?'رفع الحظر':'حظر'}</button></td></tr>`;
+    }).join('')||'<tr><td colspan="6">لا يوجد عملاء مسجلون حتى الآن.</td></tr>';
+    say('customersMsg','تم تحميل العملاء وطلباتهم وحالة الحسابات.','info');
   }
+
+  async function loadCustomerActivity(){
+    const el=$('activityRows'); if(!el)return;
+    const {data,error}=await sb.from('customer_activity').select('id,user_id,activity_name,created_at').order('created_at',{ascending:false}).limit(100);
+    if(error){el.innerHTML=`<tr><td colspan="3">${escapeHtml(error.message)} — تأكد من تشغيل تحديث SQL.</td></tr>`;return;}
+    const ids=[...new Set((data||[]).map(a=>a.user_id))];
+    const {data:profiles}=ids.length?await sb.from('profiles').select('id,full_name,email').in('id',ids):{data:[]};
+    const byId=new Map((profiles||[]).map(p=>[p.id,p]));
+    const labels={login:'تسجيل دخول',order_created:'إنشاء طلب',profile_view:'فتح الحساب'};
+    el.innerHTML=(data||[]).map(a=>{const p=byId.get(a.user_id)||{};return `<tr><td>${escapeHtml(p.full_name||p.email||a.user_id)}</td><td>${escapeHtml(labels[a.activity_name]||a.activity_name)}</td><td>${a.created_at?new Date(a.created_at).toLocaleString('ar-EG'):'—'}</td></tr>`}).join('')||'<tr><td colspan="3">لا يوجد نشاط مسجل بعد.</td></tr>';
+  }
+
+  window.toggleCustomerVerified=async(id,value)=>{const {error}=await sb.from('profiles').update({is_verified:value}).eq('id',id);if(error)return alert('تعذر تحديث التوثيق: '+error.message);await loadCustomers();};
+  window.warnCustomer=async(id)=>{const reason=prompt('اكتب سبب التحذير الذي سيظهر في سجل الحساب:');if(reason===null)return;if(!reason.trim())return alert('اكتب سبب التحذير.');const {error}=await sb.from('profiles').update({account_status:'warned',warning_message:reason.trim()}).eq('id',id);if(error)return alert('تعذر تحذير الحساب: '+error.message);await loadCustomers();};
+  window.setCustomerStatus=async(id,status)=>{const labels={active:'إعادة تفعيل',suspended:'إيقاف مؤقت',banned:'حظر'};if(!confirm(`تأكيد ${labels[status]||status} هذا الحساب؟`))return;const {error}=await sb.from('profiles').update({account_status:status}).eq('id',id);if(error)return alert('تعذر تحديث حالة الحساب: '+error.message);await loadCustomers();};
 
   async function loadPaymentMethods(){const {data,error}=await sb.from('payment_methods').select('*').order('sort_order');$('paymentMethodsRows').innerHTML=error?`<tr><td colspan="4">${escapeHtml(error.message)}</td></tr>`:(data||[]).map(m=>`<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.account_number)}<br>${escapeHtml(m.account_name||'')}</td><td>${m.is_active?'نعم':'لا'}</td><td><button type="button" onclick="editPaymentMethod('${m.id}')">تعديل</button> <button type="button" onclick="deletePaymentMethod('${m.id}')">حذف</button></td></tr>`).join('')||'<tr><td colspan="4">لم تضف وسائل دفع بعد.</td></tr>';}
 
@@ -122,6 +142,7 @@
 
     $('logout').addEventListener('click', async () => { await sb.auth.signOut(); window.location.reload(); });
     $('refreshCustomers')?.addEventListener('click', loadCustomers);
+    $('refreshActivity')?.addEventListener('click', loadCustomerActivity);
     $('clearForm').addEventListener('click', () => { $('productForm').reset(); $('pid').value = ''; $('pactive').checked = true; $('imagePreview').innerHTML=''; $('imageUploadMsg').textContent='اختر صورة وسيتم رفعها تلقائيًا إلى تخزين Supabase.'; });
     $('addProductNew').addEventListener('click', () => { $('productForm').reset(); $('pid').value=''; $('pactive').checked=true; $('imagePreview').innerHTML=''; $('imageUploadMsg').textContent='اختر صورة وسيتم رفعها تلقائيًا إلى تخزين Supabase.'; $('productForm').scrollIntoView({behavior:'smooth',block:'center'}); $('pname').focus({preventScroll:true}); });
 
